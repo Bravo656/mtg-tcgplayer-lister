@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Rapid Collector-Number Lister — TCGplayer Level 4 CSV Tool</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-badge">L4 SELLER</span>
+      <div>
+        <h1>MTG Rapid Collector-# Lister</h1>
+        <p class="subtitle">Zero-latency set-cached numpad entry &amp; direct TCGplayer Level 4 SKU CSV merger</p>
+      </div>
+    </div>
+    <div class="session-stats" aria-live="polite">
+      <div class="stat-pill">
+        <span class="stat-label">Total Cards</span>
+        <span class="stat-value" id="stat-total-qty">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-label">Unique Rows</span>
+        <span class="stat-value" id="stat-unique-rows">0</span>
+      </div>
+      <div class="stat-pill highlight-stat">
+        <span class="stat-label">Est. Market Value</span>
+        <span class="stat-value" id="stat-total-value">$0.00</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-label">Pace</span>
+        <span class="stat-value" id="stat-pace">0 / hr</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace-grid">
+    <!-- LEFT COLUMN: Sticky Batch Settings + Rapid Numpad Entry + Live Card Verification -->
+    <section class="left-panel">
+      <!-- 1. Sticky Batch Bar -->
+      <form id="rapid-entry-form" class="card-panel" autocomplete="off">
+        <fieldset class="batch-fieldset">
+          <legend>1. Sticky Batch Settings (Locked While Typing)</legend>
+
+          <div class="field-group">
+            <label for="set-code-input">Active Set Code (3–4 Letters)</label>
+            <div class="set-selector-row">
+              <input
+                type="text"
+                id="set-code-input"
+                name="setCode"
+                list="mtg-sets-datalist"
+                placeholder="e.g. MH3, FDN, BLB, LTR"
+                value="MH3"
+                required
+                aria-describedby="set-status-hint"
+              >
+              <datalist id="mtg-sets-datalist">
+                <option value="FDN">Foundations (FDN)</option>
+                <option value="DSK">Duskmourn: House of Horror (DSK)</option>
+                <option value="BLB">Bloomburrow (BLB)</option>
+                <option value="MH3">Modern Horizons 3 (MH3)</option>
+                <option value="OTJ">Outlaws of Thunder Junction (OTJ)</option>
+                <option value="MKM">Murders at Karlov Manor (MKM)</option>
+                <option value="RVR">Ravnica Remastered (RVR)</option>
+                <option value="LCI">The Lost Caverns of Ixalan (LCI)</option>
+                <option value="WHO">Doctor Who (WHO)</option>
+                <option value="WOE">Wilds of Eldraine (WOE)</option>
+                <option value="CMM">Commander Masters (CMM)</option>
+                <option value="LTR">The Lord of the Rings: Tales of Middle-earth (LTR)</option>
+                <option value="MAT">March of the Machine: The Aftermath (MAT)</option>
+                <option value="MOM">March of the Machine (MOM)</option>
+                <option value="ONE">Phyrexia: All Will Be One (ONE)</option>
+                <option value="DMR">Dominaria Remastered (DMR)</option>
+                <option value="BRO">The Brothers' War (BRO)</option>
+                <option value="DMU">Dominaria United (DMU)</option>
+                <option value="2X2">Double Masters 2022 (2X2)</option>
+                <option value="CLB">Commander Legends: Battle for Baldur's Gate (CLB)</option>
+                <option value="SNC">Streets of New Capenna (SNC)</option>
+                <option value="NEO">Kamigawa: Neon Dynasty (NEO)</option>
+                <option value="MH2">Modern Horizons 2 (MH2)</option>
+                <option value="TSR">Time Spiral Remastered (TSR)</option>
+                <option value="KHM">Kaldheim (KHM)</option>
+                <option value="CMR">Commander Legends (CMR)</option>
+                <option value="ZNR">Zendikar Rising (ZNR)</option>
+                <option value="2XM">Double Masters (2XM)</option>
+                <option value="IKO">Ikoria: Lair of Behemoths (IKO)</option>
+                <option value="THB">Theros Beyond Death (THB)</option>
+                <option value="ELD">Throne of Eldraine (ELD)</option>
+                <option value="MH1">Modern Horizons (MH1)</option>
+                <option value="WAR">War of the Spark (WAR)</option>
+              </datalist>
+              <button type="button" id="load-set-btn" class="btn btn-secondary">Load &amp; Cache Set</button>
+            </div>
+            <span id="set-status-hint" class="field-hint" aria-live="polite">Ready to cache set from Scryfall for 0ms instant lookup.</span>
+          </div>
+
+          <!-- Radio buttons for Finish (3 choices) per Selection Control Decision Matrix -->
+          <div class="field-group">
+            <span class="group-label">Default Finish (Hotkey: <kbd>F</kbd> toggles last row)</span>
+            <div class="radio-pill-group" role="radiogroup" aria-label="Default Finish">
+              <label class="radio-pill">
+                <input type="radio" name="batchFinish" value="Normal" checked>
+                <span>Normal</span>
+              </label>
+              <label class="radio-pill foil-pill">
+                <input type="radio" name="batchFinish" value="Foil">
+                <span>✨ Foil</span>
+              </label>
+              <label class="radio-pill etched-pill">
+                <input type="radio" name="batchFinish" value="Etched">
+                <span>💎 Etched</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Radio buttons for Condition (5 choices) per Selection Control Decision Matrix -->
+          <div class="field-group">
+            <span class="group-label">Default Condition (Hotkeys: <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> <kbd>H</kbd>)</span>
+            <div class="radio-pill-group" role="radiogroup" aria-label="Default Condition">
+              <label class="radio-pill">
+                <input type="radio" name="batchCondition" value="Near Mint" checked>
+                <span>NM</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="batchCondition" value="Lightly Played">
+                <span>LP</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="batchCondition" value="Moderately Played">
+                <span>MP</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="batchCondition" value="Heavily Played">
+                <span>HP</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="batchCondition" value="Damaged">
+                <span>DMG</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="two-col-fields">
+            <div class="field-group">
+              <label for="batch-box-input">Physical Box / Location Tag</label>
+              <input
+                type="text"
+                id="batch-box-input"
+                name="batchBox"
+                placeholder="e.g. Box 1 - Row A"
+                value="Box 1 - Row A"
+              >
+            </div>
+            <div class="field-group">
+              <label for="audio-toggle">Audio Chime Feedback</label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="audio-toggle" name="audioEnabled" checked>
+                <span>Beep on entry &amp; high-value hit</span>
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 2. Rapid Collector Number Input -->
+        <fieldset class="numpad-fieldset">
+          <legend>2. Rapid Collector Number Entry</legend>
+          <div class="field-group">
+            <label for="collector-num-input">
+              Type Collector # &amp; Press <kbd>Enter</kbd>
+              <span class="label-sub">(Use <code>142*4</code> for qty 4, or <code>+</code> to increment last card)</span>
+            </label>
+            <div class="numpad-input-row">
+              <input
+                type="text"
+                id="collector-num-input"
+                name="collectorNumber"
+                inputmode="numeric"
+                enterkeyhint="done"
+                placeholder="e.g. 142 or 214*3"
+                aria-describedby="numpad-help"
+              >
+              <button type="submit" class="btn btn-primary btn-large">Add Card (Enter)</button>
+            </div>
+            <span id="numpad-help" class="field-hint">
+              Shortcuts on empty input: <kbd>+</kbd> +1 Qty to last card | <kbd>F</kbd> Toggle Foil on last card | <kbd>L</kbd> Set last card LP | <kbd>Ctrl+Z</kbd> Undo
+            </span>
+          </div>
+        </fieldset>
+      </form>
+
+      <!-- 3. Live Visual Verification Card Preview -->
+      <div class="card-panel verification-panel" aria-live="polite">
+        <div class="verification-header">
+          <h2>Last Entered Card Verification</h2>
+          <span id="variant-alert-badge" class="variant-badge hidden">STANDARD FRAME</span>
+        </div>
+        <div class="verification-body">
+          <div class="card-image-frame">
+            <img
+              id="preview-card-img"
+              src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='336' viewBox='0 0 240 336'><rect width='240' height='336' rx='14' fill='%231e2433' stroke='%233b4664' stroke-width='2'/><text x='50%' y='50%' fill='%238996b8' font-family='sans-serif' font-size='14' text-anchor='middle'>Card Preview</text></svg>"
+              alt="Last scanned Magic card preview"
+              width="220"
+              height="308"
+            >
+          </div>
+          <div class="verification-details">
+            <div class="verify-title" id="preview-card-name">No card entered yet</div>
+            <div class="verify-meta" id="preview-card-set">Load a set or type a Collector # to start</div>
+            <div class="verify-price-box">
+              <div>
+                <span class="price-label">Scryfall Market</span>
+                <span class="price-big" id="preview-card-price">—</span>
+              </div>
+              <div>
+                <span class="price-label">TCGplayer Product ID</span>
+                <span class="sku-code" id="preview-tcg-id">—</span>
+              </div>
+            </div>
+            <div id="preview-warning-banner" class="warning-banner hidden"></div>
+            <div class="quick-fix-actions">
+              <button type="button" id="btn-inc-last" class="btn btn-small">+1 Qty (<kbd>+</kbd>)</button>
+              <button type="button" id="btn-foil-last" class="btn btn-small">Toggle Foil (<kbd>F</kbd>)</button>
+              <button type="button" id="btn-lp-last" class="btn btn-small">Toggle LP (<kbd>L</kbd>)</button>
+              <button type="button" id="btn-undo-last" class="btn btn-small btn-danger">Undo Last</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: TCGplayer Level 4 CSV Merger + Scanned Inventory Table -->
+    <section class="right-panel">
+      <!-- TCGplayer Level 4 CSV Matcher & Pricing Config -->
+      <div class="card-panel tcg-merger-panel">
+        <div class="panel-header-row">
+          <div>
+            <h2>3. TCGplayer Level 4 CSV Merger &amp; Pricing Rules</h2>
+            <p class="panel-sub">Drop your exported TCGplayer Pricing CSV to map exact condition/foil SKUs, or export directly to Excel/CSV.</p>
+          </div>
+          <div class="export-buttons">
+            <button type="button" id="btn-export-raw-csv" class="btn btn-secondary">Export Inventory CSV (Excel)</button>
+            <button type="button" id="btn-export-tcg-csv" class="btn btn-accent">Export TCGplayer L4 Staged CSV</button>
+          </div>
+        </div>
+
+        <div class="merger-grid">
+          <div class="field-group">
+            <label for="tcg-csv-file">Load Your TCGplayer Exported Pricing CSV (Optional for exact SKU match)</label>
+            <input type="file" id="tcg-csv-file" accept=".csv" aria-describedby="tcg-csv-status">
+            <span id="tcg-csv-status" class="field-hint">No TCGplayer Pricing CSV loaded yet (will export standard columns + Scryfall TCGplayer Product IDs, or load your Seller Portal CSV for exact SKU IDs).</span>
+          </div>
+
+          <div class="pricing-rules-row">
+            <div class="field-group">
+              <label for="price-source-select">Base Price Formula</label>
+              <select id="price-source-select" name="priceSource">
+                <option value="market" selected>100% of TCG Market Price</option>
+                <option value="low">100% of TCG Low Price</option>
+                <option value="direct_low">100% of TCG Direct Low</option>
+                <option value="market_plus_5pct">TCG Market + 5%</option>
+                <option value="market_minus_5pct">TCG Market - 5% (Fast Sale)</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="price-floor-input">Min Price Floor ($)</label>
+              <input
+                type="text"
+                id="price-floor-input"
+                inputmode="decimal"
+                value="0.49"
+                aria-describedby="floor-hint"
+              >
+              <span id="floor-hint" class="field-hint">Never list below this price</span>
+            </div>
+
+            <div class="field-group">
+              <label for="bulk-skip-input">Flag Bulk Under ($)</label>
+              <input
+                type="text"
+                id="bulk-skip-input"
+                inputmode="decimal"
+                value="0.25"
+                aria-describedby="bulk-hint"
+              >
+              <span id="bulk-hint" class="field-hint">Warns if Market &lt; threshold</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scanned Inventory Table -->
+      <div class="card-panel table-panel">
+        <div class="table-header-bar">
+          <div>
+            <h2>Entered Cards Log (<span id="table-count-badge">0</span> rows)</h2>
+          </div>
+          <div class="table-actions">
+            <label class="checkbox-row">
+              <input type="checkbox" id="exclude-bulk-checkbox">
+              <span>Exclude flagged bulk (&lt; threshold) from TCGplayer upload</span>
+            </label>
+            <button type="button" id="btn-load-sample" class="btn btn-small">Load Demo Cards</button>
+            <button type="button" id="btn-clear-all" class="btn btn-small btn-danger">Clear Session</button>
+          </div>
+        </div>
+
+        <div class="table-scroll-container">
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Set</th>
+                <th>Coll #</th>
+                <th>Qty</th>
+                <th>Card Name</th>
+                <th>Variant / Frame</th>
+                <th>Finish</th>
+                <th>Condition</th>
+                <th>Market $</th>
+                <th>Your L4 Price</th>
+                <th>TCG ID / SKU</th>
+                <th>Box / Loc</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <tr class="empty-row">
+                <td colspan="13">No cards entered yet. Pick a Set Code on the left, type a Collector Number (e.g. <code>142</code>), and press <kbd>Enter</kbd>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
